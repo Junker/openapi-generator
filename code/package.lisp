@@ -1,7 +1,7 @@
 (uiop:define-package openapi-generator
     (:use #:cl)
   (:shadowing-import-from #:closer-mop
-                          #:defgeneric #:slot-definition-name)
+                          #:defclass #:defgeneric #:slot-definition-name)
   (:import-from #:uiop
                 #:default-temporary-directory #:delete-file-if-exists
                 #:read-file-string #:file-exists-p #:ensure-pathname)
@@ -10,7 +10,7 @@
   (:import-from #:cl-project
                 #:make-project)
   (:import-from #:alexandria
-                #:length= #:define-constant #:string-designator #:when-let)
+                #:length= #:define-constant #:string-designator #:when-let #:if-let)
   (:import-from #:json-mop
                 #:json-serializable-class #:json-to-clos)
   (:import-from #:yason
