@@ -50,16 +50,7 @@
   (:documentation "Generate defpackage code including alias functions")
   (:method (name (api openapi) &key alias)
     `(uiop:define-package ,(intern (upcase name))
-         (:use)
-       (:import-from #:cl
-                     #:append #:declaim #:declare #:ignorable #:optimize #:speed #:space #:safety #:debug #:compilation-speed #:defparameter #:null
-                     #:case #:array #:write-to-string #:setf #:defparameter #:defun #:fdefinition #:t #:nil #:&key #:when #:let* #:or #:if #:cdr #:assoc #:quote #:string-equal #:cons #:list #:cond #:find #:warn #:boundp #:symbol-value #:string #:integer #:number #:boolean #:let #:unless #:make-string-output-stream #:get-output-stream-string #:string= #:hash-table #:stream #:typep #:progn #:ignore-errors #:stringp #:not #:otherwise)
-       (:import-from #:quri #:uri #:make-uri #:render-uri #:uri-scheme #:uri-host #:uri-port)
-       (:import-from #:str #:concat)
-       (:import-from #:com.inuoe.jzon #:parse #:with-writer* #:write-key* #:write-value* #:stringify)
-       (:import-from #:openapi-generator #:remove-empty-values #:json-null #:json-number #:json-array #:json-object #:json-false #:json-true)
-       (:import-from #:dexador #:request)
-       (:import-from #:serapeum #:assuref)
+       (:use)
        (:export #:*authorization* #:*headers* #:*cookie* #:*parse* #:*server*
                 ,@(append (when (member :path alias)
                             (collect-function-names api :param-case nil))
@@ -88,17 +79,18 @@
                  (paths api))
         result-list))))
 
-(defmacro %generate-client (&key url content path (export-symbols t) (check-type t))
+(defmacro %generate-client (&key api url content path (export-symbols t) (check-type t))
   "Generates Common Lisp client by OpenAPI Spec."
-  (let ((specification (parse-openapi "generated" :source-directory path :url url :content content)))
+  (let ((specification (or api
+			   (parse-openapi "generated" :source-directory path :url url :content content))))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        ,@(generate-function-code specification :check-type check-type)
        ,(when export-symbols
 	  `(export ',(mapcar (function intern)
 			     (collect-function-names specification)))))))
 
-(defun generate-client (&key url content path (export-symbols t) (check-type t))
-  (eval `(%generate-client :url ,url :content ,content :path ,path :export-symbols ,export-symbols :check-type ,check-type)))
+(defun generate-client (&key api url content path (export-symbols t) (check-type t))
+  (eval `(%generate-client :api ,api :url ,url :content ,content :path ,path :export-symbols ,export-symbols :check-type ,check-type)))
 
 (defgeneric generate-slot-alias (api slot)
   (:documentation "Create list of setf with slot as alias")
@@ -122,17 +114,19 @@
                (paths api))
       (cons (quote setf) result-list))))
 
+
 (defgeneric generate-parameters (&key query headers authorization cookie parse server)
   (:documentation "Creates code to be included in main.lisp for parameters")
   (:method (&key query headers authorization cookie parse server)
-    (let ((*print-case* :downcase))
-      (cl:format nil "~{~S~%~}"
-                 (list `(defparameter ,(intern "*PARSE*") ,(when parse parse))
-                       `(defparameter ,(intern "*AUTHORIZATION*") ,authorization)
-                       `(defparameter ,(intern "*SERVER*") ,server)
-                       `(defparameter ,(intern "*COOKIE*") ,cookie)
-                       `(defparameter ,(intern "*HEADERS*") ',headers)
-                       `(defparameter ,(intern "*QUERY*") ',query))))))
+    (let ((*print-case* :downcase)
+	  (*package* (find-package 'dummy-printing-package)))
+      (cl:format cl:nil "~{~S~%~}"
+                 (cl:list `(cl:defparameter ,(cl:intern "*PARSE*") ,(cl:when parse parse))
+			  `(cl:defparameter ,(cl:intern "*AUTHORIZATION*") ,authorization)
+			  `(cl:defparameter ,(cl:intern "*SERVER*") ,server)
+			  `(cl:defparameter ,(cl:intern "*COOKIE*") ,cookie)
+			  `(cl:defparameter ,(cl:intern "*HEADERS*") ',headers)
+			  `(cl:defparameter ,(cl:intern "*QUERY*") ',query))))))
 
 (defgeneric check-api-slots (api list)
   (:documentation "Make sure that the function (alias) can be generated.
@@ -172,17 +166,21 @@ Prefered alias source is operation-id. Last resort option is path.")
   (:method (api name &key parse headers authorization server cookie alias (check-type t))
     (let ((alias-list
             (check-api-slots api alias)))
-      (let ((*print-case* :downcase))
+      (let ((*print-case* :downcase)
+	    (*package* (find-package 'dummy-printing-package))
+	    (*print-readably* t)
+	    (*print-escape* nil))
         (concat
          (cl:format nil "~S" (generate-defpackage name api :alias alias-list))
          (string #\Newline)(string #\Newline)
-         (cl:format nil "(in-package :~A)" (downcase (symbol-name name)))
+         (cl:format nil "(cl:in-package :~A)" (downcase (symbol-name name)))
          (string #\Newline)(string #\Newline)
          (string #\Newline)(string #\Newline)
          (generate-parameters :headers headers :authorization authorization :cookie cookie
                               :parse parse :server server)
          (string #\Newline)(string #\Newline)
-         (cl:format nil "~{~W~% ~}" (generate-function-code api :check-type check-type))
+         (cl:format nil "~{~W~% ~}" (generate-function-code api :check-type check-type)
+		    )
 	 (when-let (operation-id-alias
 		    (and (member :operation-id alias-list)
 			 (generate-slot-alias api "operation-id")))

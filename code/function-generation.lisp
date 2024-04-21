@@ -216,8 +216,11 @@
 (defgeneric assure-required (required-parameters)
   (:documentation "Generate code for run-time type checking of required arguments")
   (:method ((required-parameter parameter))
-    `(assuref ,(intern (upcase (param-case (name required-parameter))))
-              ,(parameter-schema-type required-parameter)))
+    (let ((*print-case* :downcase)
+	  (*package* (find-package 'dummy-printing-package)))
+      (cl:read-from-string (cl:format nil "~{~W~% ~}" (cl:list `(assuref ,(cl:intern (upcase (param-case (name required-parameter))))
+					     ,(intern (symbol-name (parameter-schema-type required-parameter))
+						      :common-lisp)))))))
   (:method ((required-parameters list))
     (mapcar (function (lambda (parameter)
               (funcall (function assure-required) parameter)))
@@ -230,13 +233,19 @@ This only happens, if arguments supplied.")
     (let ((type
             (parameter-schema-type optional-parameter))
           (parameter-symbol
-            (intern (upcase (param-case (name optional-parameter))))))
-      (when (and type
-                 (cl:not (string-equal "content-type" parameter-symbol)))
-        `(when ,parameter-symbol
-           (assuref
-            ,parameter-symbol
-            ,type)))))
+            (intern (upcase (param-case (name optional-parameter)))))
+	  (*print-case* :downcase)
+	  (*package* (find-package 'dummy-printing-package)))
+      (cl:when (cl:and type
+                 (cl:not (cl:string-equal "content-type" parameter-symbol)))
+        (cl:read-from-string
+	 (cl:format nil "~{~W~% ~}"
+		    (cl:list
+		     `(cl:when ,parameter-symbol
+			(serapeum:assuref
+			 ,parameter-symbol
+			 ,(intern (symbol-name type)
+				  :cl)))))))))
   (:method ((optional-parameter list))
     (mapcar (function (lambda (parameter)
               (funcall (function assure-optional) parameter)))
@@ -276,13 +285,15 @@ symbols will have numbers values are converted into strings at run time.")
                      (emptyp item))))
                  (mapcar (function (lambda (item)
                            (typecase item
-                             (symbol (case (parameter-schema-type
-                                            (get-parameter-by-name (symbol-name item)
-                                                                   parameter-list))
-                                       ((number integer)
-                                        `(write-to-string ,item))
-                                       (otherwise
-                                        item)))
+                             (symbol
+				(case-using (function string-equal)
+				  (parameter-schema-type
+				   (get-parameter-by-name (symbol-name item)
+							  parameter-list))
+                                ((number integer)
+                                 (list 'write-to-string item))
+				(otherwise
+				 item)))
                              (string item))))
                          path-list)))))
 
@@ -449,14 +460,14 @@ symbols will have numbers values are converted into strings at run time.")
                               (when (> (list-length property-names) 0)
                                 `((or ,@(intern-param
                                          property-names))
-                                  (let ((s (make-string-output-stream)))
-                                    (declare (stream s))
-                                    (com.inuoe.jzon:with-writer* (:stream s :pretty t)
+                                  (let ((,(intern "S") (make-string-output-stream)))
+                                    (declare (stream ,(intern "S")))
+                                    (com.inuoe.jzon:with-writer* (:stream ,(intern "S") :pretty t)
                                       (com.inuoe.jzon:with-object*
                                         ,@(mapcan (function optional-or-required)
                                                   property-names)))
                                     (let ((output
-                                            (get-output-stream-string s)))
+                                            (get-output-stream-string ,(intern "S"))))
                                       (declare (string output))
                                       (unless (string= "{}" output)
                                         output))))))))))))
@@ -525,9 +536,11 @@ symbols will have numbers values are converted into strings at run time.")
                   (:json `(if ,(intern "PARSE")
                               (parse ,intern-response)
                               ,intern-response))
-                  (otherwise `(case parse
+                  (otherwise `(case ,(intern "PARSE")
                                 (:json (parse ,intern-response))
                                 (otherwise ,intern-response))))
-                `(case parse
+                `(case ,(intern "PARSE")
                    (:json (parse ,intern-response))
                    (otherwise ,intern-response))))))))
+
+"delete/admin/users/{username}/keys/{id}"

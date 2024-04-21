@@ -186,3 +186,5 @@ It simply uses uiop:read-file-string. There is also uiop:read-file-lines."
 
 (deftype json-object ()
   (quote (and string (satisfies json-object-p))))
+
+(defpackage dummy-printing-package )
