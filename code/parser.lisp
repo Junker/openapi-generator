@@ -28,31 +28,31 @@
   (:method ((openapi pathname))
     (funcall (function get-openapi-version) (from-file openapi))))
 
-(defgeneric parse-url (name url)
+(defgeneric parse-url (name url &key converter-url)
   (:documentation "Parse url into package and save file in openapi-generator/data.
 Supported are: url / apis-guru / path / name (in openapi-generator/data folder)")
-  (:method ((file-name string) (url string))
+  (:method ((file-name string) (url string) &key (converter-url *converter-url*))
     (to-file (get-data-file file-name)
-             (funcall (function parse-url) nil url)))
-  (:method ((file-name null) (url string))
+             (funcall (function parse-url) nil url :converter-url converter-url)))
+  (:method ((file-name null) (url string) &key (converter-url *converter-url*))
     (let ((url-ending
             (substring (- (length url) 4)
                        (length url)
                        url)))
       (case-using (function string-equal) url-ending
         (("yaml" ".yml")
-         (convert-to-openapi-3 :url url))
+         (convert-to-openapi-3 :url url :converter-url converter-url))
         ("json"
          (let ((result
                  (dex:get url)))
            (if (eql (get-openapi-version result)
                     (quote openapi-2.0))
-               (convert-to-openapi-3 :url url)
+               (convert-to-openapi-3 :url url :converter-url converter-url)
                result)))))))
 
-(defgeneric parse-string (file-name file)
+(defgeneric parse-string (file-name file &key converter-url)
   (:documentation "Safe string to file in local folder")
-  (:method ((file-name string) (file string))
+  (:method ((file-name string) (file string) &key (converter-url *converter-url*))
     (let ((target-directory
             (get-data-file file-name)))
       (if (starts-with-p "{" file)
@@ -60,7 +60,8 @@ Supported are: url / apis-guru / path / name (in openapi-generator/data folder)"
             (openapi-2.0
              (to-file target-directory
                       (convert-to-openapi-3 :content file
-                                            :content-type "json")))
+                                            :content-type "json"
+					    :converter-url converter-url)))
             ((openapi-3.0 openapi-3.1)
              file)
             (otherwise
@@ -68,28 +69,31 @@ Supported are: url / apis-guru / path / name (in openapi-generator/data folder)"
           (to-file target-directory (convert-to-openapi-3 :content file
                                                           :content-type "yaml"))))))
 
-(defgeneric parse-directory (source-directory target-directory)
+(defgeneric parse-directory (source-directory target-directory &key converter-url)
   (:documentation "Parse file from source directory to target-directory as usable JSON Openapi 3.X")
-  (:method ((source-directory pathname) (target-directory pathname))
+  (:method ((source-directory pathname) (target-directory pathname) &key (converter-url *converter-url*))
     (let* ((file-content
              (from-file source-directory))
            (json-content
              (ecase-using (function string=) (file-type source-directory)
                ("yaml"
                 (to-file target-directory
-                         (convert-to-openapi-3 :content file-content :content-type "yaml")))
+                         (convert-to-openapi-3 :content file-content
+					       :content-type "yaml"
+					       :converter-url converter-url)))
                ("json"
                 (if (eql (get-openapi-version file-content)
                          (quote openapi-2.0))
                     (to-file target-directory
-                             (convert-to-openapi-3 :content file-content))
+                             (convert-to-openapi-3 :content file-content
+						   :converter-url converter-url))
                     file-content)))))
       json-content)))
 
-(defgeneric parse-apis-guru-id (file-name apis-guru-id)
+(defgeneric parse-apis-guru-id (file-name apis-guru-id &key converter-url)
   (:documentation "parse api guru name with parse url")
-  (:method ((file-name string) (apis-guru-id string))
-    (parse-url file-name (apis-guru-url apis-guru-id))))
+  (:method ((file-name string) (apis-guru-id string) &key (converter-url *converter-url*))
+    (parse-url file-name (apis-guru-url apis-guru-id) :converter-url converter-url)))
 
 (defmethod dereference ((table hash-table))
   "Dereference all references recursively.
@@ -155,23 +159,23 @@ Supported are: url / apis-guru / path / name (in openapi-generator/data folder)"
   "Reads file to string from path."
   (funcall (function dereference) (from-file openapi)))
 
-(defgeneric parse-openapi (name &key url source-directory collection-id content dereference)
+(defgeneric parse-openapi (name &key url source-directory collection-id content dereference converter-url)
   (:documentation "Parse json/yaml from a file or uri into openapi class instance
 You should mostly submit a file-name, and either ")
-  (:method ((name string) &key url source-directory collection-id content (dereference *dereference*))
+  (:method ((name string) &key url source-directory collection-id content (dereference *dereference*) (converter-url *converter-url*))
     (let* ((file-pathname
              (make-pathname :directory (trim (directory-namestring constant-data-directory)
                                              :char-bag "/")
                             :name name :type "json"))
            (result
              (cond (source-directory
-                    (parse-directory source-directory file-pathname))
+                    (parse-directory source-directory file-pathname :converter-url converter-url))
                    (url
-                    (parse-url name url))
+                    (parse-url name url :converter-url converter-url))
                    (collection-id
                     (parse-apis-guru-id name collection-id))
                    (content
-                    (parse-string name content))
+                    (parse-string name content :converter-url converter-url))
                    (t
                     (cond ((file-exists-p (get-data-file name))
                            (let* ((content
@@ -179,18 +183,21 @@ You should mostly submit a file-name, and either ")
                                   (openapi-version
                                     (get-openapi-version content)))
                              (case openapi-version
-                               (openapi-2.0 (convert-to-openapi-3 :content content))
+                               (openapi-2.0 (convert-to-openapi-3 :content content
+								  :converter-url converter-url))
                                ((openapi-3.0 openapi-3.1) content)
                                (otherwise (error "The Version ~W is not supported"
                                                  openapi-version)))))
                           ((uiop:file-exists-p (get-data-file name :type "yaml"))
                            (to-file (get-data-file name)
                                     (convert-to-openapi-3 :pathname (get-data-file name :type "yaml")
-                                                          :content-type "yaml")))
+                                                          :content-type "yaml"
+							  :converter-url converter-url)))
                           ((uiop:file-exists-p (get-data-file name :type "yml"))
                            (to-file (get-data-file name)
                                     (convert-to-openapi-3 :pathname (get-data-file name :type "yml")
-                                                          :content-type "yaml")))
+                                                          :content-type "yaml"
+							  :converter-url converter-url)))
                           (t
                            (error (concat "There is no " name " json/yaml in the openapi-generator/data folder
 Alternativeyl you can supply one of the keyword parameters (source-directory, apis-guru-id, file-content, url)"))))))))

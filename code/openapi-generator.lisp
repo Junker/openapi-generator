@@ -79,18 +79,28 @@
                  (paths api))
         result-list))))
 
-(defmacro %generate-client (&key api url content path (export-symbols t) (check-type t))
+(defmacro %generate-client (&key api url content path (export-symbols t) (check-type t) (converter-url *converter-url*))
   "Generates Common Lisp client by OpenAPI Spec."
   (let ((specification (or api
-			   (parse-openapi "generated" :source-directory path :url url :content content))))
+			   (parse-openapi "generated"
+					  :source-directory path
+					  :url url
+					  :content content
+					  :converter-url converter-url))))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        ,@(generate-function-code specification :check-type check-type)
        ,(when export-symbols
 	  `(export ',(mapcar (function intern)
 			     (collect-function-names specification)))))))
 
-(defun generate-client (&key api url content path (export-symbols t) (check-type t))
-  (eval `(%generate-client :api ,api :url ,url :content ,content :path ,path :export-symbols ,export-symbols :check-type ,check-type)))
+(defun generate-client (&key api url content path (export-symbols t) (check-type t) (converter-url *converter-url*))
+  (eval `(%generate-client :api ,api
+			   :url ,url
+			   :content ,content
+			   :path ,path
+			   :export-symbols ,export-symbols
+			   :check-type ,check-type
+			   :converter-url ,converter-url)))
 
 (defgeneric generate-slot-alias (api slot)
   (:documentation "Create list of setf with slot as alias")
@@ -218,7 +228,8 @@ Prefered alias source is operation-id. Last resort option is path.")
                               server parse headers authorization cookie
                               (alias (list :operation-id)) (system-directory :library) (load-system t)
                               openapi (api-name system-name) url source-directory collection-id content
-                              (dereference *dereference*) (verbose t) (check-type t))
+                              (dereference *dereference*) (verbose t) (check-type t)
+			      (converter-url *converter-url*))
   "Creates Openapi client by combining a project template with generated code.
 Source options are url, source-directory, collection-id, or openapi (openapi class instance).
 The options server, parse, headers, authorization, cookie, content are stored in the library code
@@ -250,7 +261,8 @@ as dynamic parameters.."
                            :source-directory source-directory
                            :collection-id collection-id
                            :dereference dereference
-                           :content content))
+                           :content content
+                           :converter-url converter-url))
         (intern (upcase system-name))
         :headers headers :authorization authorization :cookie cookie
         :parse parse :alias alias :server server :check-type check-type)
