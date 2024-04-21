@@ -16,7 +16,7 @@
   (:import-from #:yason
                 #:true)
   (:import-from #:str
-                #:param-case #:downcase #:upcase #:concat
+                #:param-case #:downcase #:upcase #:concat #:param-case
                 #:emptyp #:containsp #:ends-with-p #:starts-with-p
                 #:split #:substring #:replace-first #:replace-using #:unwords
                 #:trim #:trim-left #:string-case)

@@ -26,10 +26,10 @@ It simply uses uiop:read-file-string. There is also uiop:read-file-lines."
               (second rest)))
         (if (stringp first)
             (if (or (null second) (slot-option-p second))
-                `(,(intern (string-upcase first))
+                `(,(intern (string-upcase (param-case first)))
                   :json-key ,first
                   ,@(cdr rest))
-                `(,(intern (string-upcase first))
+                `(,(intern (string-upcase (param-case first)))
                   :json-key ,first
                   :json-type ,second
                   ,@(cddr rest)))
