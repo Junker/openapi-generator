@@ -8,7 +8,7 @@
 (deftype openapi-version ()
   '(satisfies openapi-version-p))
 
-(json-class openapi nil
+(define-json-class openapi nil
             (("openapi" :string
 			:initarg :openapi
 			:initform "3.1.0"
@@ -52,9 +52,9 @@ Holds the relative paths to the individual endpoints and their operations. The p
 		       :accessor schema))
             (:documentation "This is the root object of the OpenAPI document."))
 
-(json-class openapi-3.0 (openapi) nil)
+(define-json-class openapi-3.0 (openapi) nil)
 
-(json-class openapi-3.1 (openapi)
+(define-json-class openapi-3.1 (openapi)
             ((json-schema-dialect "jsonSchemaDialect"
 				  :string
 				  :initarg :json-schema-dialect
@@ -71,7 +71,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
                (title (info api))
                (version (info api)))))
 
-(json-class info nil
+(define-json-class info nil
             (("title" :string
 		      :initarg :title
                       :accessor title
@@ -122,7 +122,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
 			   (slot-value-safe object (quote description)))
 		  (concat " (description " description ")"))))))
 
-(json-class contact nil
+(define-json-class contact nil
             (("name" :string
 		     :initarg :name
 		     :accessor name
@@ -137,7 +137,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
                       :documentation "The email address of the contact person/organization. This MUST be in the form of an email address."))
             (:documentation "Contact information for the exposed API."))
 
-(json-class license nil
+(define-json-class license nil
             (("name" :string
 		     :initarg :name
 		     :accessor name
@@ -158,7 +158,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
     (cl:format stream "~A"
                (title (info object)))))
 
-(json-class server nil
+(define-json-class server nil
             (("url" :string
 		    :initarg :url
 		    :accessor url
@@ -178,7 +178,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
   (print-unreadable-object (object stream :type t :identity t)
     (cl:format stream "url: ~A" (url object))))
 
-(json-class server-variable nil
+(define-json-class server-variable nil
             (("enum" (:list :string)
 		     :initarg :server-variable
 		     :accessor enum
@@ -198,7 +198,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
   (print-unreadable-object (object stream :type t)
     (cl:format stream "default: ~A" (default object))))
 
-(json-class components nil
+(define-json-class components nil
             (("schemas" (:hash-table schema)
 			:initarg :schemas
 			:accessor schemas
@@ -248,7 +248,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
 			:accessor reference))
             (:documentation "Holds a set of reusable objects for different aspects of the OAS. All objects defined within the components object will have no effect on the API unless they are explicitly referenced from properties outside the components object."))
 
-(json-class path nil
+(define-json-class path nil
             ((reference "$ref" :string
 			:initarg :reference
 			:accessor reference
@@ -312,7 +312,7 @@ Holds the relative paths to the individual endpoints and their operations. The p
                                    operation-type)))
                                (moptilities:direct-slot-names 'path))))))
 
-(json-class operation nil
+(define-json-class operation nil
             (("tags" (:list :string)
 		     :initarg :tags
 		     :accessor tags
@@ -382,7 +382,7 @@ The Responses Object MUST contain at least one response code, and if only one re
           (cl:format stream "operation-id: ~A" operation-id)
           (cl:format stream "")))))
 
-(json-class external-documentation nil
+(define-json-class external-documentation nil
             (("description" :string
 			    :initarg :description
 			    :accessor description
@@ -398,7 +398,7 @@ The Responses Object MUST contain at least one response code, and if only one re
   (print-unreadable-object (object stream :type t :identity t)
     (cl:format stream "url: ~A" (url object))))
 
-(json-class parameter ()
+(define-json-class parameter ()
             (("name" :string
 		     :initarg :name
                      :required t
@@ -486,7 +486,7 @@ For more complex scenarios, the content property can define the media type and s
           (cl:format stream "ref: ~A" ref)
           (cl:format stream "name: ~A, in ~A" (name object) (in object))))))
 
-(json-class request-body nil
+(define-json-class request-body nil
             ((reference "$ref"
 			:string
 			:initarg :reference
@@ -512,7 +512,7 @@ For more complex scenarios, the content property can define the media type and s
           (cl:format stream "content-type: ~A" content-type)
           (cl:format stream "")))))
 
-(json-class media-type nil
+(define-json-class media-type nil
             (("schema" schema
 		       :initarg :schema
 		       :accessor schema
@@ -531,7 +531,7 @@ For more complex scenarios, the content property can define the media type and s
                          :documentation "A map between a property name and its encoding information. The key, being the property name, MUST exist in the schema as a property. The encoding object SHALL only apply to requestBody objects when the media type is multipart or application/x-www-form-urlencoded."))
             (:documentation "Each Media Type Object provides schema and examples for the media type identified by its key."))
 
-(json-class encoding nil
+(define-json-class encoding nil
             ((content-type "contentType"
 			   :string
 			   :initarg :content-type
@@ -554,7 +554,7 @@ For more complex scenarios, the content property can define the media type and s
                               :documentation "Determines whether the parameter value SHOULD allow reserved characters, as defined by [RFC3986] :/?#[]@!$&'()*+,;= to be included without percent-encoding. The default value is false. This property SHALL be ignored if the request body media type is not application/x-www-form-urlencoded or multipart/form-data. If a value is explicitly defined, then the value of contentType (implicit or explicit) SHALL be ignored."))
             (:documentation "A single encoding definition applied to a single schema property."))
 
-(json-class response nil
+(define-json-class response nil
             (("description" :string
 			    :initarg :description
 			    :accessor description
@@ -578,7 +578,7 @@ For more complex scenarios, the content property can define the media type and s
 			:accessor reference))
             (:documentation "Describes a single response from an API Operation, including design-time, static links to operations based on the response."))
 
-(json-class example nil
+(define-json-class example nil
             (("summary" :string
 			:initarg :summary
 			:accessor summary
@@ -601,7 +601,7 @@ For more complex scenarios, the content property can define the media type and s
 			:initarg :reference
 			:accessor reference)))
 
-(json-class link nil
+(define-json-class link nil
             ((operation-ref "operationRef"
 			    :string
 			    :initarg :operation-ref
@@ -641,7 +641,7 @@ For computing links, and providing instructions to execute them, a runtime expre
 
 A linked operation MUST be identified using either an operationRef or operationId. In the case of an operationId, it MUST be unique and resolved in the scope of the OAS document. Because of the potential for name clashes, the operationRef syntax is preferred for OpenAPI documents with external references."))
 
-(json-class header nil
+(define-json-class header nil
             (("description" :string
 			    :initarg :description
 			    :accessor header
@@ -697,7 +697,7 @@ A linked operation MUST be identified using either an operationRef or operationI
   2. in MUST NOT be specified, it is implicitly in header.
   3. All traits that are affected by the location MUST be applicable to a location of header (for example, style)."))
 
-(json-class tag nil
+(define-json-class tag nil
             (("name" :string
 		     :initarg :name
 		     :accessor name
@@ -718,7 +718,7 @@ A linked operation MUST be identified using either an operationRef or operationI
   (print-unreadable-object (object stream :type t :identity t)
     (cl:format stream "~A" (name object))))
 
-(json-class reference nil
+(define-json-class reference nil
             ((reference "$ref"
 			:string
 			:initarg :reference
@@ -747,7 +747,7 @@ Note that this restriction on additional properties is a difference between Refe
   (print-unreadable-object (object stream :type t :identity t)
     (cl:format stream "~A" (slot-value object (quote ref)))))
 
-(json-class schema nil
+(define-json-class schema nil
             ((schema "$schema" :any
 		     :initarg :schema
 		     :accessor schema
@@ -1238,7 +1238,7 @@ While composition offers model extensibility, it does not imply a hierarchy betw
     - Override the schema name by overriding the property with a new value. If a new value exists, this takes precedence over the schema name. As such, inline schema definitions, which do not have a given id, cannot be used in polymorphism."))
 
 ;; Discriminator Object (only allowed if oneOf, anyOf, allOf)
-(json-class discriminator nil
+(define-json-class discriminator nil
             ((property-name "propertyName" :string
 			    :required t
 			    :accessor property-name
@@ -1258,7 +1258,7 @@ The discriminator object is legal only when using one of the composite keywords 
   (print-unreadable-object (object stream :type t :identity t)
     (cl:format stream "~A" (property-name object))))
 
-(json-class xml nil
+(define-json-class xml nil
             (("name" :string
 		     :accessor name
                      :documentation "Replaces the name of the element/attribute used for the described schema property. When defined within items, it will affect the name of the individual XML elements within the list. When defined alongside type being array (outside the items), it will affect the wrapping element and only if wrapped is true. If wrapped is false, it will be ignored.")
@@ -1278,7 +1278,7 @@ The discriminator object is legal only when using one of the composite keywords 
 
 When using arrays, XML element names are not inferred (for singular/plural forms) and the name property SHOULD be used to add that information. See examples for expected behavior."))
 
-(json-class security-scheme nil
+(define-json-class security-scheme nil
             (("type" :string
 		     :initarg :type
 		     :accessor security-scheme-type
@@ -1327,7 +1327,7 @@ Supported schemes are HTTP authentication, an API key (either as a header, a coo
     (cl:format stream "type: ~A, name: ~A, in: ~A, scheme: ~A"
                (slot-value object 'type) (name object) (in object) (scheme object))))
 
-(json-class o-auth-flows nil
+(define-json-class o-auth-flows nil
             (("implicit" o-auth-flow
 			 :accessor implicit
                          :documentation "Configuration for the OAuth Implicit flow")
@@ -1342,7 +1342,7 @@ Supported schemes are HTTP authentication, an API key (either as a header, a coo
 				 :documentation "Configuration for the OAuth Authorization Code flow. Previously called accessCode in OpenAPI 2.0."))
             (:documentation "Allows configuration of the supported OAuth Flows."))
 
-(json-class o-auth-flow nil
+(define-json-class o-auth-flow nil
             ((authorization-url "authorizationUrl" :string
 				:required t
 				:accessor authorization-url
@@ -1365,6 +1365,6 @@ Supported schemes are HTTP authentication, an API key (either as a header, a coo
     (cl:format stream "authorizationUrl: ~A, tokenUrl: ~A"
                (authorization-url object) (token-url object))))
 
-(json-class path-item-or-reference nil
+(define-json-class path-item-or-reference nil
             (("title" :string
 		      :accessor title)))

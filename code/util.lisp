@@ -46,7 +46,7 @@ It simply uses uiop:read-file-string. There is also uiop:read-file-lines."
                 `(first
                   ,@rest)))))))
 
-(defmacro json-class (name direct-superclasses direct-slots &rest options)
+(defmacro define-json-class (name direct-superclasses direct-slots &rest options)
   `(defclass ,name ,direct-superclasses
      (,@(mapcar #'expand-slot direct-slots))
      ,@(append options '((:metaclass json-mop:json-serializable-class)))))
