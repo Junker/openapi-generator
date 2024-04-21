@@ -1,16 +1,16 @@
 (in-package #:openapi-generator)
 
-(json-class apis-guru-list nil
-            (("api-list" (:hash-table apis-guru-api) :reader api-list)))
+(define-json-class apis-guru-list nil
+  (("api-list" (:hash-table apis-guru-api) :reader api-list)))
 
-(json-class apis-guru-api nil
-            (("added" :string
-                      :documentation "Timestamp when the API was first added to the directory")
-             ("preferred" :string
-                          :reader preferred
-                          :documentation "Recommended version")
-             ("versions" (:hash-table apis-guru-api-version)
-                         :reader versions)))
+(define-json-class apis-guru-api nil
+  (("added" :string
+	    :documentation "Timestamp when the API was first added to the directory")
+   ("preferred" :string
+		:reader preferred
+		:documentation "Recommended version")
+   ("versions" (:hash-table apis-guru-api-version)
+	       :reader versions)))
 
 (defmethod print-object ((object apis-guru-api) stream)
   (print-unreadable-object (object stream :type t)
@@ -18,7 +18,7 @@
                (substring 0 10 (updated (gethash (preferred object) (versions object))))
                (preferred object))))
 
-(json-class apis-guru-api-version nil
+(define-json-class apis-guru-api-version nil
             (("added" :string
                       :documentation "Timestamp when the version was added")
              ("externalDocs" apis-guru-external-documentation
@@ -35,26 +35,26 @@
                         :documentation "Timestamp when the version was updated")
              ("openapiVer" :string)))
 
-(json-class apis-guru-external-documentation (external-documentation)
-            (("updated" :string)))
+(define-json-class apis-guru-external-documentation (external-documentation)
+  (("updated" :string)))
 
-(json-class apis-guru-info nil
-            (("contact" :hash-table)
-             ("description" :string)
-             ("title" :string)
-             ("version" :string)
-             ("x-apisguru-categories" (:list :string))
-             ("x-logo" apis-guru-url)
-             ("x-origin" (:list apis-guru-origin) :reader x-origin)
-             ("x-providerName" :string)))
+(define-json-class apis-guru-info nil
+  (("contact" :hash-table)
+   ("description" :string)
+   ("title" :string)
+   ("version" :string)
+   ("x-apisguru-categories" (:list :string))
+   ("x-logo" apis-guru-url)
+   ("x-origin" (:list apis-guru-origin) :reader x-origin)
+   ("x-providerName" :string)))
 
-(json-class apis-guru-url nil
-            (("url" :string :reader url)))
+(define-json-class apis-guru-url nil
+  (("url" :string :reader url)))
 
-(json-class apis-guru-origin nil
-            (("format" :string :reader apis-guru-origin-format)
-             ("url" :string :reader url)
-             ("version" :string)))
+(define-json-class apis-guru-origin nil
+  (("format" :string :reader apis-guru-origin-format)
+   ("url" :string :reader url)
+   ("version" :string)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun get-apis-guru-list ()
