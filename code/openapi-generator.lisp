@@ -248,7 +248,7 @@ as dynamic parameters.."
     (make-project
      project-pathname
      :name system-name
-     :depends-on (quote (quri str com.inuoe.jzon dexador uiop openapi-generator))
+     :depends-on (quote (quri str com.inuoe.jzon dexador uiop openapi-generator serapeum))
      :verbose nil
      :without-tests t)
     (with-open-file (system pathname-main
