@@ -116,13 +116,14 @@
                                               slot)
                            (unless exist-p
                              (return-from generate-slot-alias))
-                           (push `(fdefinition (quote ,(intern (function-name path operator :param-case nil))))
-                                 result-list)
-                           (push `(fdefinition (quote ,(intern (upcase (param-case value)))))
-                                 result-list))))
+			   (push (list (quote serapeum:defalias)
+				       (intern (upcase (param-case value)))
+				       (list (quote quote)
+					     (intern (function-name path operator :param-case nil))))
+				 result-list))))
                        (collect-path-types path-object))))
                (paths api))
-      (cons (quote setf) result-list))))
+      (cons (quote progn) result-list))))
 
 
 (defgeneric generate-parameters (&key query headers authorization cookie parse server)
