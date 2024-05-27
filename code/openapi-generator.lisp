@@ -51,7 +51,7 @@
   (:method (name (api openapi) &key alias)
     `(uiop:define-package ,(intern (upcase name))
        (:use)
-       (:export #:*authorization* #:*headers* #:*cookie* #:*parse* #:*server*
+       (:export #:*bearer* #:*authorization* #:*headers* #:*cookie* #:*parse* #:*server*
                 ,@(append (when (member :path alias)
                             (collect-function-names api :param-case nil))
                           (when (member :summary alias)
@@ -126,14 +126,15 @@
       (cons (quote progn) result-list))))
 
 
-(defgeneric generate-parameters (&key query headers authorization cookie parse server)
+(defgeneric generate-parameters (&key query headers authorization bearer cookie parse server)
   (:documentation "Creates code to be included in main.lisp for parameters")
-  (:method (&key query headers authorization cookie parse server)
+  (:method (&key query headers authorization bearer cookie parse server)
     (let ((*print-case* :downcase)
 	  (*package* (find-package 'dummy-printing-package)))
       (cl:format cl:nil "~{~S~%~}"
                  (cl:list `(cl:defparameter ,(cl:intern "*PARSE*") ,(cl:when parse parse))
 			  `(cl:defparameter ,(cl:intern "*AUTHORIZATION*") ,authorization)
+			  `(cl:defparameter ,(cl:intern "*BEARER*") ,bearer)
 			  `(cl:defparameter ,(cl:intern "*SERVER*") ,server)
 			  `(cl:defparameter ,(cl:intern "*COOKIE*") ,cookie)
 			  `(cl:defparameter ,(cl:intern "*HEADERS*") ',headers)
@@ -172,9 +173,9 @@ Prefered alias source is operation-id. Last resort option is path.")
           (push :path result-list))
         result-list))))
 
-(defgeneric generate-code (api name &key parse headers authorization server cookie alias check-type)
+(defgeneric generate-code (api name &key parse headers authorization bearer server cookie alias check-type)
   (:documentation "Generate all code to be included in the main.lisp file. Includes defpackage + functions + setf alias")
-  (:method (api name &key parse headers authorization server cookie alias (check-type t))
+  (:method (api name &key parse headers authorization bearer server cookie alias (check-type t))
     (let ((alias-list
             (check-api-slots api alias)))
       (let ((*print-case* :downcase)
@@ -187,8 +188,8 @@ Prefered alias source is operation-id. Last resort option is path.")
          (cl:format nil "(cl:in-package :~A)" (downcase (symbol-name name)))
          (string #\Newline)(string #\Newline)
          (string #\Newline)(string #\Newline)
-         (generate-parameters :headers headers :authorization authorization :cookie cookie
-                              :parse parse :server server)
+         (generate-parameters :headers headers :authorization authorization :bearer bearer
+			      :cookie cookie :parse parse :server server)
          (string #\Newline)(string #\Newline)
          (cl:format nil "~{~W~% ~}" (generate-function-code api :check-type check-type)
 		    )
@@ -226,14 +227,14 @@ Prefered alias source is operation-id. Last resort option is path.")
 
 (defun make-openapi-client (system-name
                             &key
-                              server parse headers authorization cookie
+                              server parse headers authorization bearer cookie
                               (alias (list :operation-id)) (system-directory :library) (load-system t)
                               openapi (api-name system-name) url source-directory collection-id content
                               (dereference *dereference*) (verbose t) (check-type t)
 			      (converter-url *converter-url*))
   "Creates Openapi client by combining a project template with generated code.
 Source options are url, source-directory, collection-id, or openapi (openapi class instance).
-The options server, parse, headers, authorization, cookie, content are stored in the library code
+The options server, parse, headers, authorization, bearer, cookie, content are stored in the library code
 as dynamic parameters.."
   (let* ((project-pathname
            (make-pathname :directory (concat (trim-left
@@ -265,7 +266,7 @@ as dynamic parameters.."
                            :content content
                            :converter-url converter-url))
         (intern (upcase system-name))
-        :headers headers :authorization authorization :cookie cookie
+        :headers headers :authorization  authorization :bearer bearer :cookie cookie
         :parse parse :alias alias :server server :check-type check-type)
        system))
     (when verbose

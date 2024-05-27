@@ -199,7 +199,7 @@ parameters.
   (openapi-generator:make-openapi-client
    "openai"
    :url "https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"
-   :headers (list (cons "authorization" "Bearer <YOUR-API-KEY>"))
+   :bearer "<YOUR-API-KEY>"
    :system-directory :temporary)
 #+end_src
 You have to first open an account and generate an api-key for using this api.

@@ -137,7 +137,7 @@
     (flet ((default-parameter-p (item)
              (when (typep item (quote string-designator))
                (case-using (function string-equal) item
-                 (("PARSE" "SERVER" "AUTHORIZATION" "HEADERS" "COOKIE" "QUERY")
+                 (("PARSE" "SERVER" "AUTHORIZATION" "BEARER" "HEADERS" "COOKIE" "QUERY")
                   t)
                  (otherwise nil)))))
       (let ((title-symbol (slot-value-safe json-body-schema (quote title)))
@@ -156,6 +156,7 @@
                          (list (intern "HEADERS") (intern "*HEADERS*"))
                          (list (intern "COOKIE") (intern "*COOKIE*"))
                          (list (intern "AUTHORIZATION") (intern "*AUTHORIZATION*"))
+                         (list (intern "BEARER") (intern "*BEARER*"))
                          (list (intern "SERVER") (intern "*SERVER*"))
                          (list (intern "PARSE") (intern "*PARSE*")))
                    (when title-symbol (list (intern-param title-symbol)))
@@ -355,7 +356,8 @@ symbols will have numbers values are converted into strings at run time.")
                      (mapcar (function name) (get-parameter-type "header" parameters))
                      :test (function string-equal))))
           (standard-headers
-            `((cl:cons "Authorization" ,(intern "AUTHORIZATION"))
+            `((when ,(intern "AUTHORIZATION")
+		(cl:cons "Authorization" ,(intern "AUTHORIZATION")))
               (cl:cons "cookie" ,(intern "COOKIE")))))
       (when content-type-list
         (push content-type-list standard-headers))
@@ -530,6 +532,7 @@ symbols will have numbers values are converted into strings at run time.")
                                          intern-content))
                          (values))
 	           :method (quote ,(intern (symbol-name operation-type)))
+		   :bearer-auth ,(intern "BEARER")
 	           :headers ,(get-headers all-parameters operation-object))))
            ,(if response-type
                 (case response-type
