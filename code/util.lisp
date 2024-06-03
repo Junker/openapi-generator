@@ -44,7 +44,12 @@ It simply uses uiop:read-file-string. There is also uiop:read-file-lines."
 
 (defmacro define-json-class (name direct-superclasses direct-slots &rest options)
   (flet ((expand-slot (slot-specifier)
-	   (let ((first
+	   (etypecase slot-specifier
+	     (string
+	      (list (intern (string-upcase (str:param-case slot-specifier)))
+		    :json-key slot-specifier))
+	     (cons
+	      (let ((first
 		   (first slot-specifier))
 		 (second
 		   (second slot-specifier)))
@@ -73,7 +78,7 @@ It simply uses uiop:read-file-string. There is also uiop:read-file-lines."
 				(cdr slot-specifier)))
 			((or non-keyword-symbol json-mop-type json-mop-composite-type)
 			 (list* slot-name :json-key first :json-type second
-				(cddr slot-specifier)))))))))))
+				(cddr slot-specifier)))))))))))))
     (list* 'defclass name direct-superclasses
 	   (mapcar #'expand-slot direct-slots)
 	   (list :metaclass 'json-mop:json-serializable-class)

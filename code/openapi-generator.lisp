@@ -260,7 +260,9 @@ as dynamic parameters.."
             openapi
             (parse-openapi api-name
                            :url url
-                           :source-directory source-directory
+                           :source-directory (if (pathnamep source-directory)
+						 source-directory
+						 (pathname source-directory))
                            :collection-id collection-id
                            :dereference dereference
                            :content content
