@@ -218,10 +218,17 @@
   (:documentation "Generate code for run-time type checking of required arguments")
   (:method ((required-parameter parameter))
     (let ((*print-case* :downcase)
-	  (*package* (find-package 'dummy-printing-package)))
+	  (*package* (find-package 'dummy-printing-package))
+	  (types
+	    (parameter-schema-type required-parameter)))
       (cl:read-from-string (cl:format nil "~{~W~% ~}" (cl:list `(assuref ,(cl:intern (upcase (param-case (name required-parameter))))
-					     ,(intern (symbol-name (parameter-schema-type required-parameter))
-						      :common-lisp)))))))
+					     ,(if (consp types)
+						  (mapcar (lambda (type)
+							   (intern (symbol-name type)
+								   :common-lisp))
+							 types)
+						  (intern (symbol-name types)
+							  :common-lisp))))))))
   (:method ((required-parameters list))
     (mapcar (function (lambda (parameter)
               (funcall (function assure-required) parameter)))
@@ -231,13 +238,13 @@
   (:documentation "Generate code for run-time type checking of optional arguments.
 This only happens, if arguments supplied.")
   (:method ((optional-parameter parameter))
-    (let ((type
+    (let ((types
             (parameter-schema-type optional-parameter))
           (parameter-symbol
             (intern (upcase (param-case (name optional-parameter)))))
 	  (*print-case* :downcase)
 	  (*package* (find-package 'dummy-printing-package)))
-      (cl:when (cl:and type
+      (cl:when (cl:and types
                  (cl:not (cl:string-equal "content-type" parameter-symbol)))
         (cl:read-from-string
 	 (cl:format nil "~{~W~% ~}"
@@ -245,8 +252,13 @@ This only happens, if arguments supplied.")
 		     `(cl:when ,parameter-symbol
 			(serapeum:assuref
 			 ,parameter-symbol
-			 ,(intern (symbol-name type)
-				  :cl)))))))))
+			 ,(if (consp types)
+			      (mapcar (lambda (type)
+				       (intern (symbol-name type)
+					       :cl))
+				     types)
+			      (intern (symbol-name types)
+				      :cl))))))))))
   (:method ((optional-parameter list))
     (mapcar (function (lambda (parameter)
               (funcall (function assure-optional) parameter)))
@@ -287,14 +299,18 @@ symbols will have numbers values are converted into strings at run time.")
                  (mapcar (function (lambda (item)
                            (typecase item
                              (symbol
-				(case-using (function string-equal)
-				  (parameter-schema-type
-				   (get-parameter-by-name (symbol-name item)
-							  parameter-list))
-                                ((number integer)
-                                 (list 'write-to-string item))
-				(otherwise
-				 item)))
+			      (let ((parameter-schema-type
+				      (parameter-schema-type
+				       (get-parameter-by-name (symbol-name item)
+							      parameter-list))))
+				(if (consp parameter-schema-type)
+				    (list 'format nil "~A" item)
+				    (case-using (function string-equal)
+					parameter-schema-type
+				      ((number integer)
+				       (list 'write-to-string item))
+				      (otherwise
+				       item)))))
                              (string item))))
                          path-list)))))
 
