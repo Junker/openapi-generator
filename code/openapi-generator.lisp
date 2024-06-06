@@ -173,6 +173,7 @@ Prefered alias source is operation-id. Last resort option is path.")
           (push :path result-list))
         result-list))))
 
+
 (defgeneric generate-code (api name &key parse headers authorization bearer server cookie alias check-type)
   (:documentation "Generate all code to be included in the main.lisp file. Includes defpackage + functions + setf alias")
   (:method (api name &key parse headers authorization bearer server cookie alias (check-type t))
@@ -260,9 +261,10 @@ as dynamic parameters.."
             openapi
             (parse-openapi api-name
                            :url url
-                           :source-directory (if (pathnamep source-directory)
-						 source-directory
-						 (pathname source-directory))
+                           :source-directory (cond ((pathnamep source-directory)
+						    source-directory)
+						   (source-directory
+						    (pathname source-directory)))
                            :collection-id collection-id
                            :dereference dereference
                            :content content
