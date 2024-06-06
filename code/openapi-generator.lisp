@@ -51,6 +51,7 @@
   (:method (name (api openapi) &key alias)
     `(uiop:define-package ,(intern (upcase name))
        (:use)
+       (:import-from #:cl #:t #:nil)
        (:export #:*bearer* #:*authorization* #:*headers* #:*cookie* #:*parse* #:*server*
                 ,@(append (when (member :path alias)
                             (collect-function-names api :param-case nil))
